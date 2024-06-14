@@ -11,7 +11,7 @@ pragma solidity ^0.8.0;
  *
  * Owner (Company):
  *  -> Can submit permissions and binary hash on creation
- *  -> Can register valid keys for software user logins
+ *  -> Can register keys for software user logins
  *
  * Software Users:
  *  -> Can report software behavior
@@ -19,7 +19,9 @@ pragma solidity ^0.8.0;
  *  -> Can link themselves to a valid key upon software installation (login)
  *
  *  Everyone:
- *  -> Can consult reports with active user count and recently software behavior
+ *  -> Consults Binary Hash and Permissions
+ *  -> Views reports with behaviors.
+ *  -> Accesses an overview of all reports.
  */
 
 contract SCC {
@@ -44,26 +46,34 @@ contract SCC {
 
     /* COUNTER */
     //  for active software users
-    uint256 public activateUsers;
+    uint256 private activateUsers;
     //  for generated reports
-    uint256 public reportCount;
+    uint256 private reportCount;
+    // For reporting permissions that have been violated
+    uint256 private violatedPermissionsCount;
 
-    // Events for important contract actions
-    event ReportGenerated(uint256 indexed reportId, address indexed user);
+    // Event emitted when a new software behavior report is generated
+    event ReportGenerated(
+        uint256 indexed reportId, // Unique identifier for the report
+        address indexed user, // Address of the user who generated the report
+        string[] reportSoftwareBehavior, // Array of behaviors reported by the user
+        bool indexed violated // Flag indicating if permissions were violated
+    );
 
     /* MODIFIERS */
     // Restrict access to owner-only functions
     modifier onlyOwner() {
-        require(msg.sender == owner, "Not the contract owner");
+        require(msg.sender == owner, "Only the contract owner can call this function");
         _;
     }
 
+    //Restrict access to functions not allowed for the contract owner.
     modifier onlyNotOwner() {
-        require(msg.sender != owner, "Not the contract owner");
+        require(msg.sender != owner, "Not available to the contract owner");
         _;
     }
 
-    // Restrict access to software users-only functions
+    //Restrict access to functions allowed only for registered software users.
     modifier onlySoftwareUser() {
         require(userToKeys[msg.sender] != bytes32(0), "You are not a software user");
         _;
@@ -77,26 +87,40 @@ contract SCC {
     }
 
     // Function for software users to generate a new report
-    function reportSoftwareBehavior(string[] memory _behavior) public onlySoftwareUser {
+    function reportSoftwareBehavior(string[] memory _behavior) public onlySoftwareUser{
+        // Ensure behavior array is not empty
+        require(_behavior.length > 0, "Behavior array cannot be empty");
+
+        bool violated = false;
+
+        // Check if behavior length exceeds permissions length
+        if (_behavior.length > permissions.length) {
+            violatedPermissionsCount++;
+            violated = true;
+        }
+
+        // Store the reported behavior
         reports[reportCount] = _behavior;
         reportCount++;
-        emit ReportGenerated(reportCount - 1, msg.sender);
+
+        // Emit event to notify about the new report generated
+        emit ReportGenerated(reportCount - 1, msg.sender, _behavior, violated);
     }
 
+    // Key example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+    // Function to register a new valid key and not used
     function registerKey(bytes32 _key) public onlyOwner {
         require(_key != bytes32(0), "Invalid key");
         require(!registeredKeys[_key], "Key already registered");
         registeredKeys[_key] = true;
     }
 
-    //0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
-
-    // Function to register a new valid key and not used (owner-only)
+    // Function to a software user authorize yourself
     function authorizeUser(bytes32 _key) public onlyNotOwner {
         require(registeredKeys[_key], "Invalid key");
         require(!usedKeys[_key], "Key already used");
         userToKeys[msg.sender] = _key;
-        usedKeys[_key] = true; 
+        usedKeys[_key] = true;
         activateUsers++;
     }
 
@@ -104,5 +128,10 @@ contract SCC {
     function revokeAuthorization() public onlySoftwareUser {
         userToKeys[msg.sender] = bytes32(0);
         activateUsers--;
+    }
+
+    // Function to return a report overview
+    function retrieveReportOverview() public view returns (uint256, uint256, uint256){
+        return (activateUsers, reportCount, violatedPermissionsCount);
     }
 }
