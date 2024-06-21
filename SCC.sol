@@ -41,14 +41,21 @@ contract SCC {
     mapping(bytes32 => bool) private usedKeys;
     // List registered keys
     mapping(bytes32 => bool) private registeredKeys;
-    //  Report IDs to arrays of software behavior descriptions
+    // Report IDs to arrays of software behavior descriptions
     mapping(uint256 => string[]) public reports;
+    mapping(uint256 => string[]) private pendingReports;
+    // Maps each pending report ID to the count of approval votes.
+    mapping(uint256 => uint256) private pendingReportToApprovalVotes;
+    // Tracks whether a user has voted on a specific pending report ID.
+    mapping(uint256 => mapping(address => bool)) private userHasVotedOnPendingReport;
 
     /* COUNTER */
     //  for active software users
     uint256 private activateUsers;
     //  for generated reports
     uint256 private reportCount;
+    //  for pending reports
+    uint256 private pendingReportCount;
     // For reporting permissions that have been violated
     uint256 private violatedPermissionsCount;
 
@@ -58,6 +65,14 @@ contract SCC {
         address indexed user, // Address of the user who generated the report
         string[] reportSoftwareBehavior, // Array of behaviors reported by the user
         bool indexed violated // Flag indicating if permissions were violated
+    );
+
+    //Event emitted when a pending software behavior report is generated
+    event pendingReportGenerated(
+        uint256 indexed reportId, // Unique identifier for the report
+        address indexed user, // Address of the user who generated the report
+        string[] reportSoftwareBehavior, // Array of behaviors reported by the user
+        bytes32 indexed windowsKey // Flag indicating if permissions were violated
     );
 
     /* MODIFIERS */
@@ -86,25 +101,40 @@ contract SCC {
         permissions = _permissions;
     }
 
-    // Function for software users to generate a new report
-    function reportSoftwareBehavior(string[] memory _behavior) public onlySoftwareUser{
-        // Ensure behavior array is not empty
+    //// Allows software users to vote on pending reports until 50% + 1 approve the report.
+    function reportPendingSoftwareBehavior(string[] memory _behavior, bytes32 _windowsKey) public onlySoftwareUser{
         require(_behavior.length > 0, "Behavior array cannot be empty");
+        require(_windowsKey != bytes32(0), "Windows Key cannot be 0");
+        pendingReports[pendingReportCount] = _behavior;
+        pendingReportCount++;
+        emit pendingReportGenerated(pendingReportCount - 1, msg.sender, _behavior, _windowsKey);
+    }
 
+    // Vote to pending report untill 50% approve the report
+    function voteOnPendingReport(bool approve, uint256 pendingReportID) public onlySoftwareUser{
+        require(reports[pendingReportID].length > 0, "Already published");
+        require(userHasVotedOnPendingReport[pendingReportID][msg.sender] != true, "Already voted");
+        userHasVotedOnPendingReport[pendingReportID][msg.sender] = true;
+        if(approve){
+            pendingReportToApprovalVotes[pendingReportID]++;
+            if(pendingReportToApprovalVotes[pendingReportID] > activateUsers / 2){
+                approvePendingReport(pendingReportID);
+            }
+        }
+    }
+
+    // Function for contract to approve a new report
+    function approvePendingReport(uint256 pendingReportID) internal  onlySoftwareUser{
         bool violated = false;
-
-        // Check if behavior length exceeds permissions length
-        if (_behavior.length > permissions.length) {
+        if (pendingReports[pendingReportID].length > permissions.length) {
             violatedPermissionsCount++;
             violated = true;
         }
-
-        // Store the reported behavior
-        reports[reportCount] = _behavior;
+        reports[pendingReportID] = pendingReports[pendingReportID];
         reportCount++;
 
         // Emit event to notify about the new report generated
-        emit ReportGenerated(reportCount - 1, msg.sender, _behavior, violated);
+        emit ReportGenerated(pendingReportID, msg.sender, pendingReports[pendingReportID], violated);
     }
 
     // Key example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
