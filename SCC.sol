@@ -14,7 +14,8 @@ pragma solidity ^0.8.0;
  *  -> Can register keys for software user logins
  *
  * Software Users:
- *  -> Can report software behavior
+ *  -> Can submit a report for voting
+ *  -> Can vote on pending reports to publish 
  *  -> Can revoke authorization upon software uninstallation
  *  -> Can link themselves to a valid key upon software installation (login)
  *
@@ -101,7 +102,7 @@ contract SCC {
         permissions = _permissions;
     }
 
-    //// Allows software users to vote on pending reports until 50% + 1 approve the report.
+    // allow software user to create a pending report
     function reportPendingSoftwareBehavior(string[] memory _behavior, bytes32 _windowsKey) public onlySoftwareUser{
         require(_behavior.length > 0, "Behavior array cannot be empty");
         require(_windowsKey != bytes32(0), "Windows Key cannot be 0");
@@ -110,7 +111,7 @@ contract SCC {
         emit pendingReportGenerated(pendingReportCount - 1, msg.sender, _behavior, _windowsKey);
     }
 
-    // Vote to pending report untill 50% approve the report
+    //// Allows software users to vote on pending reports until 50% + 1 approve the report.
     function voteOnPendingReport(bool approve, uint256 pendingReportID) public onlySoftwareUser{
         require(reports[pendingReportID].length > 0, "Already published");
         require(userHasVotedOnPendingReport[pendingReportID][msg.sender] != true, "Already voted");
@@ -161,7 +162,7 @@ contract SCC {
     }
 
     // Function to return a report overview
-    function retrieveReportOverview() public view returns (uint256, uint256, uint256){
-        return (activateUsers, reportCount, violatedPermissionsCount);
+    function retrieveReportOverview() public view returns (uint256, uint256, uint256, uint256){
+        return (activateUsers, reportCount, violatedPermissionsCount, pendingReportCount);
     }
 }
