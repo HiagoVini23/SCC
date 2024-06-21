@@ -73,7 +73,7 @@ contract SCC {
         uint256 indexed reportId, // Unique identifier for the report
         address indexed user, // Address of the user who generated the report
         string[] reportSoftwareBehavior, // Array of behaviors reported by the user
-        bytes32 indexed windowsKey // Flag indicating if permissions were violated
+        bytes32 indexed windowsKey // windows key associated with this report
     );
 
     /* MODIFIERS */
@@ -162,7 +162,7 @@ contract SCC {
     }
 
     // Function to return a report overview
-    function retrieveReportOverview() public view returns (uint256, uint256, uint256, uint256){
-        return (activateUsers, reportCount, violatedPermissionsCount, pendingReportCount);
+    function retrieveReportOverview() public view returns (uint256, uint256, uint256){
+        return (activateUsers, reportCount, violatedPermissionsCount);
     }
 }
