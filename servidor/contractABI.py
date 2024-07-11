@@ -1,5 +1,61 @@
 contract_abi = [
     {
+      "constant": True,
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "reports",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": False,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": True,
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "permissions",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": False,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": True,
+      "inputs": [],
+      "name": "binaryHash",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": False,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "string",
