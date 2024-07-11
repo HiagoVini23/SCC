@@ -45,6 +45,7 @@ contract SCC {
     // Report IDs to arrays of software behavior descriptions
     mapping(uint256 => string[]) public reports;
     mapping(uint256 => string[]) private pendingReports;
+    mapping(uint256 => address) private reportToOwner;
     // Maps each pending report ID to the count of approval votes.
     mapping(uint256 => uint256) private pendingReportToApprovalVotes;
     // Tracks whether a user has voted on a specific pending report ID.
@@ -107,25 +108,28 @@ contract SCC {
         require(_behavior.length > 0, "Behavior array cannot be empty");
         require(_windowsKey != bytes32(0), "Windows Key cannot be 0");
         pendingReports[pendingReportCount] = _behavior;
+        reportToOwner[pendingReportCount] = msg.sender;
         pendingReportCount++;
         emit pendingReportGenerated(pendingReportCount - 1, msg.sender, _behavior, _windowsKey);
     }
 
-    //// Allows software users to vote on pending reports until 50% + 1 approve the report.
+    //// Allows software users to vote on pending reports until 50% approve the report.
     function voteOnPendingReport(bool approve, uint256 pendingReportID) public onlySoftwareUser{
-        require(reports[pendingReportID].length > 0, "Already published");
+        require(pendingReports[pendingReportID].length > 0, "Pending report does not exist");
+        require(reportToOwner[pendingReportID] != msg.sender, "Owner cannot vote");
+        require(reports[pendingReportID].length == 0, "Report already approved");
         require(userHasVotedOnPendingReport[pendingReportID][msg.sender] != true, "Already voted");
         userHasVotedOnPendingReport[pendingReportID][msg.sender] = true;
         if(approve){
             pendingReportToApprovalVotes[pendingReportID]++;
-            if(pendingReportToApprovalVotes[pendingReportID] > activateUsers / 2){
+            if(pendingReportToApprovalVotes[pendingReportID] >= activateUsers / 2){
                 approvePendingReport(pendingReportID);
             }
         }
     }
 
     // Function for contract to approve a new report
-    function approvePendingReport(uint256 pendingReportID) internal  onlySoftwareUser{
+    function approvePendingReport(uint256 pendingReportID) internal onlySoftwareUser{
         bool violated = false;
         if (pendingReports[pendingReportID].length > permissions.length) {
             violatedPermissionsCount++;
