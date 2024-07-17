@@ -8,8 +8,8 @@ const contractService = new ContractService();
 export class ContractController {
 
     async registerKey(req: Request, res: Response) {
-        const { key, contractAdress } = req.body
-        const response = await contractService.registerKey(key, contractAdress);
+        const { key, contractAddress } = req.body
+        const response = await contractService.registerKey(key, contractAddress);
         if (response.ok)
             return res.status(200).send(response)
         else {
@@ -18,19 +18,46 @@ export class ContractController {
         }
     }
 
+    async getReportOverview(req: Request, res: Response) {
+        const id_software = Number(req.params.id)
+        const mapResponse = await mapService.findById(id_software);
+        let contractResponse;
+        if (mapResponse.ok){
+            //@ts-ignore
+            contractResponse = await contractService.getReportOverview(mapResponse.data.contract);
+            console.log(contractResponse)
+            if (contractResponse.ok)
+                return res.status(200).send(contractResponse)
+        }
+        const status = getStatusResponseError(contractResponse)
+        return res.status(status).send(contractResponse)
+    }
+
     async installation(req: Request, res: Response) {
         const { key, contractAddress } = req.body
-        const mapResponse = await mapService.create(Number(req.params.id), contractAddress);
-        if (!mapResponse.ok) {
-            const status = getStatusResponseError(mapResponse);
-            return res.status(status).send(mapResponse);
-        }
         const contractResponse = await contractService.authorizeUser(key, contractAddress);
-        if (contractResponse.ok)
-            return res.status(200).send(contractResponse)
-        else {
-            const status = getStatusResponseError(contractResponse)
-            return res.status(status).send(contractResponse)
+        if (contractResponse.ok) {
+            const mapResponse = await mapService.create(Number(req.params.id), contractAddress);
+            if (mapResponse.ok)
+                return res.status(200).send(contractResponse)
         }
+        const status = getStatusResponseError(contractResponse);
+        return res.status(status).send(contractResponse);
+    }
+
+    async uninstallation(req: Request, res: Response) {
+        const id_software = Number(req.params.id)
+        const mapResponse = await mapService.findById(id_software);
+        let contractResponse;
+        if (mapResponse.ok) {
+            //@ts-ignore
+            contractResponse = await contractService.revokeUser(mapResponse.data.contract);
+            if (contractResponse.ok){
+                await mapService.delete(id_software)
+                return res.status(200).send(contractResponse)
+            }
+        }
+        const status = getStatusResponseError(contractResponse)
+        return res.status(status).send(contractResponse)
     }
 }

@@ -1,16 +1,15 @@
 import { prisma } from '../../prisma/client';
 import { TypeErrorsEnum } from 'enum/TypeErrorsEnum';
-import { map } from '@prisma/client'
+import { map } from '@prisma/client';
 
 export class MapService {
    
     async create(id: number, contractAdress: string) {
         try {
-            console.log('id Map Service:'+ id)
-            console.log('contract Address:'+ contractAdress)
             const createdMap = await prisma.map.create({ data: {id_software: id, contract: contractAdress} })
             return { ok: true, message: "Created successfully!", data: createdMap };
         } catch (error: any) {
+            console.log(error)
             return { ok: false, message: "Internal error!", data: TypeErrorsEnum.Internal };
         }
     }

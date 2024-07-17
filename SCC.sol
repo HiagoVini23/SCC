@@ -142,7 +142,7 @@ contract SCC {
         emit ReportGenerated(pendingReportID, msg.sender, pendingReports[pendingReportID], violated);
     }
 
-    // Key example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+    // Key example: 0x1234566890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
     // Function to register a new valid key and not used
     function registerKey(bytes32 _key) public onlyOwner {
         require(_key != bytes32(0), "Invalid key");
