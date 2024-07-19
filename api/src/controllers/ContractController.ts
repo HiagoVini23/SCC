@@ -25,7 +25,36 @@ export class ContractController {
         if (mapResponse.ok){
             //@ts-ignore
             contractResponse = await contractService.getReportOverview(mapResponse.data.contract);
-            console.log(contractResponse)
+            if (contractResponse.ok)
+                return res.status(200).send(contractResponse)
+        }
+        const status = getStatusResponseError(contractResponse)
+        return res.status(status).send(contractResponse)
+    }
+
+    async voteOnPendingReport(req: Request, res: Response) {
+        const id_software = Number(req.params.id)
+        const { approve, pendingReportID } = req.body
+        const mapResponse = await mapService.findById(id_software);
+        let contractResponse;
+        if (mapResponse.ok){
+            //@ts-ignore
+            contractResponse = await contractService.voteOnPendingReport(mapResponse.data.contract, approve, pendingReportID);
+            if (contractResponse.ok)
+                return res.status(200).send(contractResponse)
+        }
+        const status = getStatusResponseError(contractResponse)
+        return res.status(status).send(contractResponse)
+    }
+
+    async reportPendingSoftwareBehavior(req: Request, res: Response) {
+        const id_software = Number(req.params.id)
+        const { behavior, windowsKey } = req.body
+        const mapResponse = await mapService.findById(id_software);
+        let contractResponse;
+        if (mapResponse.ok){
+            //@ts-ignore
+            contractResponse = await contractService.reportPendingSoftwareBehavior(mapResponse.data.contract, behavior, windowsKey);
             if (contractResponse.ok)
                 return res.status(200).send(contractResponse)
         }

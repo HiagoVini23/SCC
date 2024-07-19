@@ -66,6 +66,14 @@ export class ContractService {
         return this.sendTransaction(contractAddress, 'revokeAuthorization');
     }
 
+    async voteOnPendingReport(contractAddress: string, approve: boolean, pendingReportID: number): Promise<{ ok: boolean, message: string, data?: any }> {
+        return this.sendTransaction(contractAddress, 'voteOnPendingReport', [approve, pendingReportID]);
+    }
+
+    async reportPendingSoftwareBehavior(contractAddress: string, behavior: string[], windowsKey: string): Promise<{ ok: boolean, message: string, data?: any }> {
+        return this.sendTransaction(contractAddress, 'reportPendingSoftwareBehavior', [behavior, windowsKey]);
+    }
+
     async getReportOverview(contractAddress: string): Promise<{ ok: boolean, data: any }> {
         return this.callViewFunction(contractAddress, 'retrieveReportOverview');
     }

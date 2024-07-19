@@ -7,6 +7,7 @@ router.post('/registerkey', contractController.registerKey);
 router.post('/installation/:id', contractController.installation);
 router.post('/uninstallation/:id', contractController.uninstallation);
 router.get('/reportoverview/:id', contractController.getReportOverview);
+router.post('/report/:id', contractController.reportPendingSoftwareBehavior);
 
 module.exports = router;
 export default router;
