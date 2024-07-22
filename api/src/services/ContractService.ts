@@ -2,6 +2,7 @@ import { prisma } from '../../prisma/client';
 import { TypeErrorsEnum } from 'enum/TypeErrorsEnum';
 import { ethers } from 'ethers';
 const provider = new ethers.JsonRpcProvider(process.env.BLOCKCHAIN_URL);
+const providerSocket = new ethers.WebSocketProvider(process.env.BLOCKCHAIN_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY_WALLET || '0xf3ba133dc6b28a7976db03677a621efd3ecc38c07f93f963e98aa71f4b654c84', provider);
 const contractABI = require('../SCC.json');
 
@@ -19,10 +20,20 @@ function bigIntToString(obj: any): any {
     }
 }
 
+
 export class ContractService {
 
+    private WindowsKeys: string[] = [
+        "0x1234576890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "0x1234576892abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "0x1234576690abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+    ];
+
+    private reportGeneratedListener: ethers.Listener | null = null;
+    private pendingReportGeneratedListener: ethers.Listener | null = null;
+
     private async sendTransaction(contractAddress: string, method: string, params: any[] = []):
-     Promise<{ ok: boolean, message: string, data?: any }> {
+        Promise<{ ok: boolean, message: string, data?: any }> {
         try {
             const contract = new ethers.Contract(contractAddress, contractABI, wallet);
             const nonce = await wallet.getNonce();
@@ -35,7 +46,7 @@ export class ContractService {
             });
 
             const receipt = await transaction.wait();
-            return { ok: true, message: `Transaction sent: ${receipt.hash}`};
+            return { ok: true, message: `Transaction sent: ${receipt.hash}` };
         } catch (e) {
             console.error(`Error sending transaction: ${e}`);
             //@ts-ignore
@@ -67,6 +78,7 @@ export class ContractService {
     }
 
     async voteOnPendingReport(contractAddress: string, approve: boolean, pendingReportID: number): Promise<{ ok: boolean, message: string, data?: any }> {
+        console.log('vote')
         return this.sendTransaction(contractAddress, 'voteOnPendingReport', [approve, pendingReportID]);
     }
 
@@ -77,4 +89,60 @@ export class ContractService {
     async getReportOverview(contractAddress: string): Promise<{ ok: boolean, data: any }> {
         return this.callViewFunction(contractAddress, 'retrieveReportOverview');
     }
+
+    startListeningForAllEvents(contractAddress: string) {
+        this.listenForReportGenerated(contractAddress);
+        this.listenForPendingReportGenerated(contractAddress);
+    }
+
+    stopListeningForAllEvents(contractAddress: string) {
+        this.stopListeningForReportGenerated(contractAddress);
+        this.stopListeningForPendingReportGenerated(contractAddress);
+    }
+
+    //*************EVENTS******************
+    listenForReportGenerated(contractAddress: string) {
+        const contract = new ethers.Contract(contractAddress, contractABI, providerSocket);
+
+        this.reportGeneratedListener = (reportId: ethers.BigNumber, user: string, reportSoftwareBehavior: string[], violated: boolean) => {
+            console.log('Event Report Generated');
+            console.log(reportId, user, reportSoftwareBehavior, violated);
+        };
+
+        contract.on('ReportGenerated', this.reportGeneratedListener);
+    }
+
+    listenForPendingReportGenerated(contractAddress: string) {
+        const contract = new ethers.Contract(contractAddress, contractABI, providerSocket);
+
+        this.pendingReportGeneratedListener = (reportId: ethers.BigNumber, user: string, reportSoftwareBehavior: string[], windowsKey: string) => {
+            console.log(bigIntToString(reportId), user, reportSoftwareBehavior, windowsKey);
+            if (user !== process.env.WALLET_ADDRESS) {
+                if (this.WindowsKeys.includes(windowsKey)) {
+                    this.voteOnPendingReport(contractAddress, true, reportId);
+                } else {
+                    this.voteOnPendingReport(contractAddress, false, reportId);
+                }
+            }
+        };
+
+        contract.on('pendingReportGenerated', this.pendingReportGeneratedListener);
+    }
+
+    stopListeningForReportGenerated(contractAddress: string) {
+        if (this.reportGeneratedListener) {
+            const contract = new ethers.Contract(contractAddress, contractABI, providerSocket);
+            contract.off('ReportGenerated', this.reportGeneratedListener);
+            this.reportGeneratedListener = null;
+        }
+    }
+
+    stopListeningForPendingReportGenerated(contractAddress: string) {
+        if (this.pendingReportGeneratedListener) {
+            const contract = new ethers.Contract(contractAddress, contractABI, providerSocket);
+            contract.off('pendingReportGenerated', this.pendingReportGeneratedListener);
+            this.pendingReportGeneratedListener = null;
+        }
+    }
+
 }

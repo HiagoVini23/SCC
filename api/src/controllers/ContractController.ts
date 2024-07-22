@@ -32,21 +32,6 @@ export class ContractController {
         return res.status(status).send(contractResponse)
     }
 
-    async voteOnPendingReport(req: Request, res: Response) {
-        const id_software = Number(req.params.id)
-        const { approve, pendingReportID } = req.body
-        const mapResponse = await mapService.findById(id_software);
-        let contractResponse;
-        if (mapResponse.ok){
-            //@ts-ignore
-            contractResponse = await contractService.voteOnPendingReport(mapResponse.data.contract, approve, pendingReportID);
-            if (contractResponse.ok)
-                return res.status(200).send(contractResponse)
-        }
-        const status = getStatusResponseError(contractResponse)
-        return res.status(status).send(contractResponse)
-    }
-
     async reportPendingSoftwareBehavior(req: Request, res: Response) {
         const id_software = Number(req.params.id)
         const { behavior, windowsKey } = req.body
@@ -62,13 +47,41 @@ export class ContractController {
         return res.status(status).send(contractResponse)
     }
 
+    async startEventListeningForSoftware(req: Request, res: Response) {
+        const id_software = Number(req.params.id)
+        const response = await mapService.findById(id_software)
+        if(!response.ok){
+            //@ts-ignore
+            contractService.startListeningForAllEvents(response.data.contract)
+            return res.status(200).send(response)
+        }
+        const status = getStatusResponseError(response);
+        return res.status(status).send(response);
+    }
+
+    async stopEventListeningForSoftware(req: Request, res: Response) {
+        const id_software = Number(req.params.id)
+        const response = await mapService.findById(id_software)
+        if(!response.ok){
+            //@ts-ignore
+            contractService.stopListeningForAllEvents(response.data.contract)
+            return res.status(200).send(response)
+        }
+        const status = getStatusResponseError(response);
+        return res.status(status).send(response);
+    }
+
     async installation(req: Request, res: Response) {
+        const id_software = Number(req.params.id)
         const { key, contractAddress } = req.body
         const contractResponse = await contractService.authorizeUser(key, contractAddress);
         if (contractResponse.ok) {
-            const mapResponse = await mapService.create(Number(req.params.id), contractAddress);
-            if (mapResponse.ok)
-                return res.status(200).send(contractResponse)
+            if(!(await mapService.findById(id_software)).ok){
+                const mapResponse = await mapService.create(id_software, contractAddress);
+                if (mapResponse.ok)
+                    return res.status(200).send(contractResponse)
+            }
+            return res.status(200).send(contractResponse)
         }
         const status = getStatusResponseError(contractResponse);
         return res.status(status).send(contractResponse);
