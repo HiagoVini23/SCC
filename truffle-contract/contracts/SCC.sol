@@ -61,6 +61,8 @@ contract SCC {
     uint256 private pendingReportCount;
     // For reporting permissions that have been violated
     uint256 private violatedPermissionsCount;
+    // for user it's executing right now
+    uint256 private executingSoftware;
 
     // Event emitted when a new software behavior report is generated
     event ReportGenerated(
@@ -123,7 +125,7 @@ contract SCC {
         userHasVotedOnPendingReport[pendingReportID][msg.sender] = true;
         if(approve){
             pendingReportToApprovalVotes[pendingReportID]++;
-            if(pendingReportToApprovalVotes[pendingReportID] >= activateUsers / 2){
+            if(pendingReportToApprovalVotes[pendingReportID] >= executingSoftware / 2){
                 approvePendingReport(pendingReportID);
             }
         }
@@ -169,5 +171,13 @@ contract SCC {
     // Function to return a report overview
     function retrieveReportOverview() public view returns (uint256, uint256, uint256){
         return (activateUsers, reportCount, violatedPermissionsCount);
+    }
+
+    function incrementExecutingSoftware() public onlySoftwareUser {
+        executingSoftware++;
+    }
+
+    function decrementExecutingSoftware() public onlySoftwareUser {
+        executingSoftware--;
     }
 }

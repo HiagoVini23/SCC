@@ -249,6 +249,24 @@
         "type": "function"
     },
     {
+        "constant": false,
+        "inputs": [],
+        "name": "incrementExecutingSoftware",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [],
+        "name": "decrementExecutingSoftware",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "stateMutability": "payable",
         "type": "fallback"
     },
