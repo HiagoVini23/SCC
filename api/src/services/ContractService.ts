@@ -126,13 +126,11 @@ export class ContractService {
 
         this.pendingReportGeneratedListener = (reportId: ethers.BigNumber, user: string, reportSoftwareBehavior: string[], windowsKey: string) => {
             console.log(bigIntToString(reportId), user, reportSoftwareBehavior, windowsKey);
-            if (user !== process.env.WALLET_ADDRESS) {
                 if (this.WindowsKeys.includes(windowsKey)) {
                     this.voteOnPendingReport(contractAddress, true, reportId);
                 } else {
                     this.voteOnPendingReport(contractAddress, false, reportId);
                 }
-            }
         };
 
         contract.on('pendingReportGenerated', this.pendingReportGeneratedListener);
