@@ -107,7 +107,7 @@ contract SCC {
     }
 
     // Constructor to initialize the contract with binary hash and permissions
-    constructor(string memory _binaryHash, string[] memory _permissions) {
+    constructor(string memory _binaryHash, string[] memory _permissions) public {
         owner = msg.sender;
         binaryHash = _binaryHash;
         permissions = _permissions;
@@ -120,6 +120,7 @@ contract SCC {
         userToLastInteraction[msg.sender] = block.timestamp;
         pendingReports[pendingReportCount] = _behavior;
         pendingReportCount++;
+        updateInactiveUsersAndApproveReports();
         emit pendingReportGenerated(pendingReportCount - 1, msg.sender, _behavior, _windowsKey);
     }
 
@@ -130,13 +131,10 @@ contract SCC {
         require(userHasVotedOnPendingReport[pendingReportID][msg.sender] != true, "Already voted");
         userHasVotedOnPendingReport[pendingReportID][msg.sender] = true;
         userToLastInteraction[msg.sender] = block.timestamp;
-        checkAndUpdateAllUsers();
         if(approve){
             pendingReportToApprovalVotes[pendingReportID]++;
-            if(pendingReportToApprovalVotes[pendingReportID] > activeUsers / 2){
-                approvePendingReport(pendingReportID);
-            }
         }
+        updateInactiveUsersAndApproveReports();
     }
 
     // Function for contract to approve a new report
@@ -158,6 +156,7 @@ contract SCC {
         require(_key != bytes32(0), "Invalid key");
         require(!registeredKeys[_key], "Key already registered");
         registeredKeys[_key] = true;
+        updateInactiveUsersAndApproveReports();
     }
 
     // Function to a software user authorize yourself
@@ -170,6 +169,7 @@ contract SCC {
         usersAddress.push(msg.sender);
         activeUsers++;
         userToLastInteraction[msg.sender] = block.timestamp;
+        updateInactiveUsersAndApproveReports();
     }
 
     // Function for software users to revoke their own authorization
@@ -180,6 +180,7 @@ contract SCC {
         if(userToLastInteraction[msg.sender]!=0){
             activeUsers--;
         }
+        updateInactiveUsersAndApproveReports();
     }
 
     // Function to return a report overview
@@ -187,24 +188,36 @@ contract SCC {
         return (users, activeUsers, reportCount, violatedPermissionsCount);
     }
 
-    //Function to check all users and update their activity status
-    function checkAndUpdateAllUsers() internal  {
+    // update the activeUser count to approve pending report
+    function checkAndUpdateInactiveUser() internal {
         for (uint256 i = 0; i < usersAddress.length; i++) {
-            checkAndUpdateInactiveUser(usersAddress[i]);
+            uint256 lastInteraction = userToLastInteraction[usersAddress[i]];
+            if (lastInteraction != 0) {
+                uint256 timeElapsed = block.timestamp - lastInteraction;
+                if (timeElapsed >= inactivityPeriod) {
+                    // If the user has become inactive
+                    activeUsers--;
+                    // Reset the interaction timestamp to 0
+                    userToLastInteraction[usersAddress[i]] = 0;
+                }
+            }
         }
     }
 
-    // update the activeUser count to approve pendind report
-    function checkAndUpdateInactiveUser(address user) internal {
-        uint256 lastInteraction = userToLastInteraction[user];
-        if (lastInteraction != 0) {
-            uint256 timeElapsed = block.timestamp - lastInteraction;
-            if (timeElapsed >= inactivityPeriod) {
-                // If the user has become inactive
-                activeUsers--;
-                // Reset the interaction timestamp to 0
-                userToLastInteraction[user] = 0;
+    function checkAndApprovePendingReports() internal {
+        for (uint256 i = 0; i < pendingReportCount; i++) {
+            // Checks if the report is still pending and not yet approved
+            if (pendingReports[i].length > 0 && reports[i].length == 0) {
+                // Checks if more than half of the active users have approved the report
+                if (pendingReportToApprovalVotes[i] > activeUsers / 2) {
+                    approvePendingReport(i);
+                }
             }
         }
+    }
+
+    function updateInactiveUsersAndApproveReports() internal {
+        checkAndUpdateInactiveUser();
+        checkAndApprovePendingReports();
     }
 }

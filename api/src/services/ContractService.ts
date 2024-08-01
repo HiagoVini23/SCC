@@ -89,24 +89,14 @@ export class ContractService {
         return this.callViewFunction(contractAddress, 'retrieveReportOverview');
     }
 
-    async incrementExecutingSoftware(contractAddress: string): Promise<{ ok: boolean, data: any }> {
-        return this.callViewFunction(contractAddress, 'incrementExecutingSoftware');
-    }
-
-    async decrementExecutingSoftware(contractAddress: string): Promise<{ ok: boolean, data: any }> {
-        return this.callViewFunction(contractAddress, 'decrementExecutingSoftware');
-    }
-
     startListeningForAllEvents(contractAddress: string) {
         this.listenForReportGenerated(contractAddress);
         this.listenForPendingReportGenerated(contractAddress);
-        this.incrementExecutingSoftware(contractAddress);
     }
 
     stopListeningForAllEvents(contractAddress: string) {
         this.stopListeningForReportGenerated(contractAddress);
         this.stopListeningForPendingReportGenerated(contractAddress);
-        this.decrementExecutingSoftware(contractAddress);
     }
 
     //*************EVENTS******************
