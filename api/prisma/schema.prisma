@@ -8,7 +8,8 @@ datasource db {
 }
 
 model map {
-  id_software    Int    @id
-  contract       String
-  last_report_id Int
+  id_software               Int    @id
+  contract                  String @unique
+  last_block_pending_report Int
+  last_block_report         Int
 }
