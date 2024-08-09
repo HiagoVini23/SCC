@@ -2,6 +2,7 @@ import { prisma } from '../../prisma/client';
 import { TypeErrorsEnum } from 'enum/TypeErrorsEnum';
 import { ethers } from 'ethers';
 import { MapService } from './MapService';
+import { ReportService } from './ReportService';
 const provider = new ethers.JsonRpcProvider(process.env.BLOCKCHAIN_URL);
 const providerSocket = new ethers.WebSocketProvider(process.env.BLOCKCHAIN_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY_WALLET || '0xf3ba133dc6b28a7976db03677a621efd3ecc38c07f93f963e98aa71f4b654c84', provider);
@@ -31,6 +32,7 @@ export class ContractService {
     ];
 
     mapService = new MapService()
+    reportService = new ReportService()
     private reportGeneratedListener: ethers.Listener | null = null;
     private pendingReportGeneratedListener: ethers.Listener | null = null;
 
@@ -96,8 +98,10 @@ export class ContractService {
     }
 
     async startListeningForAllEvents(contractAddress: string) {
-        this.listenForReportGenerated(contractAddress);
         const map = await this.mapService.findByContract(contractAddress);
+        //@ts-ignore
+        await this.fetchPendingReport(contractAddress, map.data.last_block_report)
+        this.listenForReportGenerated(contractAddress);
         //@ts-ignore
         await this.fetchPendingReport(contractAddress, map.data.last_block_pending_report)
         this.listenForPendingReportGenerated(contractAddress);
@@ -109,37 +113,57 @@ export class ContractService {
     }
 
     //*************EVENTS******************
-    listenForReportGenerated(contractAddress: string) {
+    async listenForReportGenerated(contractAddress: string) {
         const contract = new ethers.Contract(contractAddress, contractABI, providerSocket);
+        const mapContract = await this.mapService.findByContract(contractAddress);
 
-        this.reportGeneratedListener = (reportId: ethers.BigNumber, user: string, reportSoftwareBehavior: string[], violated: boolean) => {
-            console.log('Event Report Generated');
-            console.log(reportId, user, reportSoftwareBehavior, violated);
-            this.mapService.update(contractAddress, {last_report_id: reportId})
+        this.reportGeneratedListener = async (reportId: ethers.BigNumber, user: string, reportSoftwareBehavior: string[], violated: boolean) => {
+            const currentBlock = await providerSocket.getBlockNumber();
+            //@ts-ignore
+            if(violated) this.reportService.create(reportId, mapContract.data.id_software, reportSoftwareBehavior);
+            this.mapService.update(contractAddress, { last_block_report: currentBlock })
         };
-
         contract.on('ReportGenerated', this.reportGeneratedListener);
     }
 
-    async listenForPendingReportGenerated(contractAddress: string) {
+    listenForPendingReportGenerated(contractAddress: string) {
         const contract = new ethers.Contract(contractAddress, contractABI, providerSocket);
         this.pendingReportGeneratedListener = async (reportId: ethers.BigNumber, user: string, reportSoftwareBehavior: string[], windowsKey: string) => {
             this.voteOnPendingReport(contractAddress, windowsKey, reportId)
             const currentBlock = await providerSocket.getBlockNumber();
-            this.mapService.update(contractAddress, {last_block_pending_report: currentBlock})
+            this.mapService.update(contractAddress, { last_block_pending_report: currentBlock })
         };
-
         contract.on('pendingReportGenerated', this.pendingReportGeneratedListener);
     }
 
     async fetchPendingReport(contractAddress: string, fromBlock: number) {
         const contract = new ethers.Contract(contractAddress, contractABI, provider);
         const logs = await contract.queryFilter('pendingReportGenerated', fromBlock, 'latest');
+        let latestBlock = fromBlock;
         for (const log of logs) {
-            const { args } = log;
+            const { args, blockNumber } = log;
             const { reportId, windowsKey } = args;
+            if (blockNumber > latestBlock) {
+                latestBlock = blockNumber;
+            }
             this.voteOnPendingReport(contractAddress, windowsKey, reportId)
         }
+        this.mapService.update(contractAddress, { last_block_pending_report: latestBlock });
+    }
+
+    async fetchReport(contractAddress: string, fromBlock: number) {
+        const contract = new ethers.Contract(contractAddress, contractABI, provider);
+        const logs = await contract.queryFilter('ReportGenerated', fromBlock, 'latest');
+        const mapContract = await this.mapService.findByContract(contractAddress);
+        let latestBlock = fromBlock;
+        for (const log of logs) {
+            const { args, blockNumber } = log;
+            const { reportId, violated, reportSoftwareBehavior } = args;
+            if (blockNumber > latestBlock) latestBlock = blockNumber;
+            //@ts-ignore
+            if(violated) this.reportService.create(reportId, mapContract.data.id_software, reportSoftwareBehavior);
+        }
+        this.mapService.update(contractAddress, { last_block_pending_report: latestBlock });
     }
 
     stopListeningForReportGenerated(contractAddress: string) {

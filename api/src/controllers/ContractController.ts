@@ -50,9 +50,9 @@ export class ContractController {
     async startEventListeningForSoftware(req: Request, res: Response) {
         const id_software = Number(req.params.id)
         const response = await mapService.findById(id_software)
-        if(!response.ok){
+        if(response.ok){
             //@ts-ignore
-            contractService.startListeningForAllEvents(response.data.contract)
+            await contractService.startListeningForAllEvents(response.data.contract)
             return res.status(200).send(response)
         }
         const status = getStatusResponseError(response);
@@ -62,7 +62,7 @@ export class ContractController {
     async stopEventListeningForSoftware(req: Request, res: Response) {
         const id_software = Number(req.params.id)
         const response = await mapService.findById(id_software)
-        if(!response.ok){
+        if(response.ok){
             //@ts-ignore
             contractService.stopListeningForAllEvents(response.data.contract)
             return res.status(200).send(response)

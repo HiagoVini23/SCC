@@ -1,13 +1,13 @@
 import { prisma } from '../../prisma/client';
 import { TypeErrorsEnum } from 'enum/TypeErrorsEnum';
-import { map } from '@prisma/client';
+import { Map } from '@prisma/client';
 
 export class MapService {
    
     async create(id: number, contractAdress: string) {
         try {
             const createdMap = await prisma.map.create({ data: {id_software: id, contract: contractAdress, 
-                last_pending_report_id: 0, last_report_id: 0} })
+                last_block_pending_report: 0, last_block_report: 0} })
             return { ok: true, message: "Created successfully!", data: createdMap };
         } catch (error: any) {
             console.log(error)
