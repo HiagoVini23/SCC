@@ -97,21 +97,6 @@ export class ContractService {
         return this.callViewFunction(contractAddress, 'retrieveReportOverview');
     }
 
-    async startListeningForAllEvents(contractAddress: string) {
-        const map = await this.mapService.findByContract(contractAddress);
-        //@ts-ignore
-        await this.fetchPendingReport(contractAddress, map.data.last_block_report)
-        this.listenForReportGenerated(contractAddress);
-        //@ts-ignore
-        await this.fetchPendingReport(contractAddress, map.data.last_block_pending_report)
-        this.listenForPendingReportGenerated(contractAddress);
-    }
-
-    stopListeningForAllEvents(contractAddress: string) {
-        this.stopListeningForReportGenerated(contractAddress);
-        this.stopListeningForPendingReportGenerated(contractAddress);
-    }
-
     //*************EVENTS******************
     async listenForReportGenerated(contractAddress: string) {
         const contract = new ethers.Contract(contractAddress, contractABI, providerSocket);
