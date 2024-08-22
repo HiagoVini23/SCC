@@ -68,8 +68,6 @@ contract SCC {
     uint256 private pendingReportCount;
     // For reporting permissions that have been violated
     uint256 private violatedPermissionsCount;
-    // for user it's executing right now
-    uint256 private executingSoftware;
 
     // Event emitted when a new software behavior report is generated
     event ReportGenerated(

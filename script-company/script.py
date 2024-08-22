@@ -3,17 +3,23 @@ import subprocess
 import re
 import os
 
-# Define the system script/command you want to execute
 capa_script = ".\\capa.exe"
-truffle_directory = "C:\\Users\\hyago\\OneDrive\\Área de Trabalho\\Mestrado\\SCC\\truffle-contract"
+truffle_directory = "..\\truffle-contract"
 
-if len(sys.argv) != 2:
-    print("Usage: script.py <filename>")
+filename = input("Enter the path of the binary file: ")
+private_key = input("Enter the private key of the owner: ")
+
+# Validate inputs
+if not filename or not os.path.isfile(filename):
+    print("Error: The specified file does not exist.")
     sys.exit(1)
 
-filename = sys.argv[1]
-print(f"Processing file: {filename} \n")
+if not private_key:
+    print("Error: Private key cannot be empty.")
+    sys.exit(1)
 
+print(f"\nProcessing file: {filename} \n")
+os.environ['PRIVATE_KEY'] = private_key
 capa_command = [capa_script, "-r", ".\\capa-rules-7.1.0", filename]
 
 try:

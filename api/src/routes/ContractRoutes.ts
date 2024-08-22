@@ -8,8 +8,8 @@ router.post('/installation/:id', contractController.installation);
 router.post('/uninstallation/:id', contractController.uninstallation);
 router.get('/reportoverview/:id', contractController.getReportOverview);
 router.post('/report/:id', contractController.reportPendingSoftwareBehavior);
-router.post('/startevents/:id', contractController.startEventListeningForSoftware);
-router.post('/stopevents/:id', contractController.stopEventListeningForSoftware);
+router.post('/startevents/:id', contractController.startAllEventListeningForSoftware);
+router.post('/stopevents/:id', contractController.stopAllEventListeningForSoftware);
 
 module.exports = router;
 export default router;
