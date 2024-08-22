@@ -15636,12 +15636,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0xD6093fC3F772599832fd17A03126A9a9602c6Bd7",
-      "transactionHash": "0x342e11a26e9c448fb60e62643b087a6423140446fc1f08bc0b60b08f95a635f2"
+      "address": "0x21c5ae348150011192a3Aa77EC1BcDb5337268A3",
+      "transactionHash": "0x620f586945f387cf832b10bc747240570f4081adf744da156b4ece50398b6264"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2024-08-09T19:20:26.682Z",
+  "updatedAt": "2024-08-22T20:03:58.487Z",
   "networkType": "ethereum",
   "devdoc": {
     "methods": {}
