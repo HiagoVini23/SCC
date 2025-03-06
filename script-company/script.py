@@ -34,22 +34,22 @@ try:
     sha256_match = re.search(r"sha256\s+\│\s+([a-f0-9]{64})", stdout_decoded)
     sha256 = sha256_match.group(1) if sha256_match else None
 
-    # Flag to start capturing capabilities after finding the "Capability" section
+    # Extração de capacidades sem texto entre parênteses
     capabilities = []
     capture = False
 
     for line in stdout_decoded.splitlines():
-        # Check if the "Capability" section starts
+        # Verifica se a seção "Capability" começa
         if "Capability" in line:
             capture = True
             continue
 
-        # Capture capabilities
+        # Captura as capacidades
         if capture:
-            match = re.search(r"│\s*([^\│]+?)\s*│", line)
+            match = re.search(r"│\s*([^\│\(]+)", line)  # Modificado para ignorar conteúdo após '('
             if match:
                 capability = match.group(1).strip()
-                # Stop capturing if an empty capability is found (end of section)
+                # Parar de capturar se encontrar uma capacidade vazia (fim da seção)
                 if capability:
                     capabilities.append(capability)
                 else:
@@ -58,7 +58,9 @@ try:
     # Set the environment variables
     os.environ['hash'] = sha256 if sha256 else ''
     os.environ['capabilities'] = ','.join(capabilities)
-
+   
+    print(capabilities)
+    
     # Change to the directory containing the Truffle project
     os.chdir(truffle_directory)
 
