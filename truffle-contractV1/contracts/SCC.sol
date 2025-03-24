@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title SCC - Software Compliance Contract
- * @dev Manages Software Permissions and Binary Monitoring
+ * @dev Manages Software Capabilities and Binary Monitoring
  */
 
 /**
  * Requirements:
  *
  * Owner (Company):
- *  -> Can submit permissions and binary hash on creation
+ *  -> Can submit Capabilities and binary hash on creation
  *  -> Can register keys for software user logins
  *
  * Software Users:
@@ -20,14 +19,15 @@ pragma experimental ABIEncoderV2;
  *  -> Can link themselves to a valid key upon software installation (login)
  *
  *  Everyone:
- *  -> Consults Binary Hash and Permissions
+ *  -> Consults Binary Hash and Capabilities
  *  -> Views reports with behaviors.
  *  -> Accesses an overview of all reports.
  */
 
 contract SCC {
 
-    address private microsoftAddress = 0x1234567890AbcdEF1234567890aBcdef12345678;
+    //last user from ganache
+    address private microsoftAddress = 0x189926E611c2B238D339e25E81345831dE884056;
     
     // variable to define time to inactivity
     uint256 constant inactivityPeriod = 1 weeks;
@@ -35,8 +35,8 @@ contract SCC {
     // Binary hash representing the software's unique identifier
     string public binaryHash;
 
-    // Array storing the list of permissions associated with the software
-    bytes32[] public permissions;
+    // Array storing the list of capabilities associated with the software
+    bytes32[] public capabilities;
 
     // Address of the contract owner, typically the company managing the software
     address private owner;
@@ -62,15 +62,15 @@ contract SCC {
     //  for generated reports
     uint256 private reportCount;
 
-    // For reporting permissions that have been violated
-    uint256 private violatedPermissionsCount;
+    // For reporting capabilities that have been violated
+    uint256 private violatedCapabilitiesCount;
 
     // Event emitted when a new software behavior report is generated
     event ReportGenerated(
         uint256 indexed reportId, // Unique identifier for the report
         address indexed user, // Address of the user who generated the report
         bytes32[] reportSoftwareBehavior, // Array of behaviors reported by the user
-        bool indexed violated //Flag indicating if permissions were violated
+        bool indexed violated //Flag indicating if capabilities were violated
     );
 
     /* MODIFIERS */
@@ -92,11 +92,11 @@ contract SCC {
         _;
     }
 
-    // Constructor to initialize the contract with binary hash and permissions
-    constructor(string memory _binaryHash, bytes32[] memory _permissions) {
+    // Constructor to initialize the contract with binary hash and capabilities
+    constructor(string memory _binaryHash, bytes32[] memory _capabilities) public {
         owner = msg.sender;
         binaryHash = _binaryHash;
-        permissions = _permissions;
+        capabilities = _capabilities;
     }
 
     // Key example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
@@ -134,7 +134,7 @@ contract SCC {
 
     // Function to return a report overview
     function retrieveReportOverview() public view returns (uint256, uint256, uint256, uint256){
-        return (users, activeUsers, reportCount, violatedPermissionsCount);
+        return (users, activeUsers, reportCount, violatedCapabilitiesCount);
     }
 
     // update the activeUser count to approve pending report
