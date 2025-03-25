@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Map {
+  id_software               Int       @id
+  contract                  String    @unique
+  last_block_pending_report Int?
+  last_block_report         Int
+  reports                   Report[] 
+}
+
+model Report {
+  id          Int          @id
+  mapId       Int
+  map         Map          @relation(fields: [mapId], references: [id_software])
+  behaviors   Behavior[]
+}
+
+model Behavior {
+  id          Int    @id @default(autoincrement())
+  description String
+  reportId    Int
+  report      Report @relation(fields: [reportId], references: [id])
+}

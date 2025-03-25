@@ -1,0 +1,32 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev --inspect=0.0.0.0:9200 --watch --respawn --transpile-only --ignore-watch node_modules -r tsconfig-paths/register ./src/server.ts",
+    "start": "NODE_ENV=production node dist/src/server.js",
+    "build": "NODE_ENV=production tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Hiago Vini",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/cors": "^2.8.14",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.12.7",
+    "ethers": "^5.8.0",
+    "prisma": "^5.17.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.17.0",
+    "axios": "^1.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  }
+}
