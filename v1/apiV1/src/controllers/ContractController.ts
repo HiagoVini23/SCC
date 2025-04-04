@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { MapService } from '../services/MapService';
 import { ContractService } from '../services/ContractService';
 import { getStatusResponseError } from '../utils/ErrorsHandling';
-import { TypeErrorsEnum } from 'enum/TypeErrorsEnum';
+import { TypeErrorsEnum } from 'enum/TypeEnum';
 const mapService = new MapService();
 const contractService = new ContractService();
 
@@ -55,13 +55,15 @@ export class ContractController {
         return res.status(status).send(contractResponse)
     }
 
+    // listen todos, não precisa ser id, passa path e 
+    // rodar ao iniciar
     async startAllEventListeningForSoftware(req: Request, res: Response) {
         const id_software = Number(req.params.id)
         const map = await mapService.findById(id_software)
         if (map.ok) {
             const data = map.data as MapData;
-            await contractService.fetchReport(data.contract, data.last_block_report)
-            contractService.listenForReportGenerated(data.contract);
+            await contractService.fetchCapabilities(data.contract, data.last_block_report)
+            contractService.listenForCapabilityViolated(data.contract);
             return res.status(200).send(map)
         }
         const status = getStatusResponseError(map);
@@ -73,7 +75,7 @@ export class ContractController {
         const map = await mapService.findById(id_software)
         if (map.ok) {
             const data = map.data as MapData;
-            contractService.stopListeningForReportGenerated(data.contract);
+            contractService.stopListeningForCapabilityViolated(data.contract);
             return res.status(200).send(map)
         }
         const status = getStatusResponseError(map);

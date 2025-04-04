@@ -1,4 +1,4 @@
-import { TypeErrorsEnum } from "../enum/TypeErrorsEnum"
+import { TypeErrorsEnum } from "../enum/TypeEnum"
 
 export function getStatusResponseError(response: any) {
     switch (response.data) {

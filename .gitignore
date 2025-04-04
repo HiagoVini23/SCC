@@ -1,7 +1,7 @@
 bloco.txt
 .vscode
 /script-company/NPFInstall.exe
-/truffle-contractV1/node_modules
-/truffle-contractV1/.env
-/truffle-contractV2/node_modules
-/truffle-contractV2/.env
+v1/truffle-contractV1/node_modules
+v1/truffle-contractV1/.env
+v2/truffle-contractV2/node_modules
+v2/truffle-contractV2/.env

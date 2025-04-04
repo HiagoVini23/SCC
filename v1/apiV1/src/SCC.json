@@ -1,29 +1,6 @@
 [
   {
     "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "reports",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [],
     "name": "binaryHash",
     "outputs": [
@@ -41,14 +18,33 @@
     "inputs": [
       {
         "name": "",
-        "type": "uint256"
+        "type": "bytes32"
       }
     ],
-    "name": "capabilities",
+    "name": "foundCapabilities",
     "outputs": [
       {
         "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
         "type": "bytes32"
+      }
+    ],
+    "name": "allowedCapabilities",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
       }
     ],
     "payable": false,
@@ -62,7 +58,7 @@
         "type": "string"
       },
       {
-        "name": "_capabilities",
+        "name": "_allowedCapabilities",
         "type": "bytes32[]"
       }
     ],
@@ -75,9 +71,21 @@
     "inputs": [
       {
         "indexed": true,
-        "name": "reportId",
-        "type": "uint256"
+        "name": "user",
+        "type": "address"
       },
+      {
+        "indexed": true,
+        "name": "softwareBehavior",
+        "type": "bytes32"
+      }
+    ],
+    "name": "CapabilityFoundByUser",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
       {
         "indexed": true,
         "name": "user",
@@ -85,43 +93,11 @@
       },
       {
         "indexed": false,
-        "name": "reportSoftwareBehavior",
-        "type": "bytes32[]"
-      },
-      {
-        "indexed": true,
-        "name": "violated",
-        "type": "bool"
+        "name": "softwareBehavior",
+        "type": "bytes32"
       }
     ],
-    "name": "ReportGenerated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "name": "reportHash",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "name": "messageHash",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "name": "recoveredSigner",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "name": "expectedSigner",
-        "type": "address"
-      }
-    ],
-    "name": "DebugLog",
+    "name": "CapabilityViolated",
     "type": "event"
   },
   {
@@ -177,10 +153,6 @@
       {
         "name": "",
         "type": "uint256"
-      },
-      {
-        "name": "",
-        "type": "uint256"
       }
     ],
     "payable": false,
@@ -191,15 +163,15 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_reportSoftwareBehavior",
-        "type": "bytes32[]"
+        "name": "_softwareBehavior",
+        "type": "bytes32"
       },
       {
         "name": "_signature",
         "type": "bytes"
       }
     ],
-    "name": "generateReport",
+    "name": "reportCapability",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",

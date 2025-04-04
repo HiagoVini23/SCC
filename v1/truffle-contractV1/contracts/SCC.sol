@@ -24,6 +24,9 @@ pragma solidity >=0.4.22 <0.9.0;
  *  -> Accesses an overview of all reports.
  */
 
+ // criar função que retorna capabilities permitidas
+ // criar função que retorna report com capabilities
+
 contract SCC {
 
     //last user from ganache
@@ -35,8 +38,13 @@ contract SCC {
     // Binary hash representing the software's unique identifier
     string public binaryHash;
 
+    mapping(bytes32 => bool) public allowedCapabilities;
     // Array storing the list of capabilities associated with the software
-    bytes32[] public capabilities;
+    //bytes32[] public allowedCapabilities;
+
+    // Array storing the list of capabilities found by users
+    mapping(bytes32 => bool) public foundCapabilities;
+    //bytes32[] public foundCapabilities;
 
     // Address of the contract owner, typically the company managing the software
     address private owner;
@@ -48,8 +56,6 @@ contract SCC {
     mapping(bytes32 => bool) private usedKeys;
     // List registered keys
     mapping(bytes32 => bool) private registeredKeys;
-    // Report IDs to arrays of software behavior descriptions
-    mapping(uint256 => bytes32[]) public reports;
 
     mapping(address => uint256) private userToLastInteraction;
 
@@ -59,18 +65,21 @@ contract SCC {
     address[] private usersAddress;
     //  for activate software users
     uint256 private activeUsers;
-    //  for generated reports
-    uint256 private reportCount;
 
     // For reporting capabilities that have been violated
     uint256 private violatedCapabilitiesCount;
 
+    //Event Capabilities found
+    event CapabilityFoundByUser(
+        address indexed user,
+        bytes32 indexed softwareBehavior
+    );
+
     // Event emitted when a new software behavior report is generated
-    event ReportGenerated(
-        uint256 indexed reportId, // Unique identifier for the report
-        address indexed user, // Address of the user who generated the report
-        bytes32[] reportSoftwareBehavior, // Array of behaviors reported by the user
-        bool indexed violated //Flag indicating if capabilities were violated
+    // Event Capabilities violated
+    event CapabilityViolated(
+        address indexed user,
+        bytes32 softwareBehavior
     );
 
     /* MODIFIERS */
@@ -93,10 +102,12 @@ contract SCC {
     }
 
     // Constructor to initialize the contract with binary hash and capabilities
-    constructor(string memory _binaryHash, bytes32[] memory _capabilities) public {
+    constructor(string memory _binaryHash, bytes32[] memory _allowedCapabilities) public {
         owner = msg.sender;
         binaryHash = _binaryHash;
-        capabilities = _capabilities;
+        for (uint i = 0; i < _allowedCapabilities.length; i++) {
+            allowedCapabilities[_allowedCapabilities[i]] = true;
+        }
     }
 
     // Key example: 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
@@ -133,8 +144,8 @@ contract SCC {
     }
 
     // Function to return a report overview
-    function retrieveReportOverview() public view returns (uint256, uint256, uint256, uint256){
-        return (users, activeUsers, reportCount, violatedCapabilitiesCount);
+    function retrieveReportOverview() public view returns (uint256, uint256, uint256){
+        return (users, activeUsers, violatedCapabilitiesCount);
     }
 
     // update the activeUser count to approve pending report
@@ -153,28 +164,37 @@ contract SCC {
         }
     }
 
-    function generateReport(bytes32[] memory _reportSoftwareBehavior, bytes memory _signature) public {
-        bytes32 reportHash = keccak256(abi.encodePacked(_reportSoftwareBehavior));
+    function toHex(address _addr) internal pure returns (string memory) {
+         return string(abi.encode(_addr));
+    }
+
+    //verificar se foi de fato violated
+    function reportCapability(bytes32 _softwareBehavior, bytes memory _signature) public {
+        bytes32 reportHash = keccak256(abi.encode(_softwareBehavior));
+        //bytes32 prefixedHash = prefixed(reportHash);
+
+         // Verifica a assinatura
         address signer = verifySignature(reportHash, _signature);
 
-        // Verifica se o endereço do signatário corresponde ao esperado (Microsoft)
-        require(signer == microsoftAddress, "Signature verification failed or address mismatch");
+        //require(signer == microsoftAddress, string(abi.encode("Expected: ", toHex(microsoftAddress), " Got: ", toHex(signer))));
 
-        reportCount++;
-        reports[reportCount] = _reportSoftwareBehavior;
-        emit ReportGenerated(reportCount, msg.sender, _reportSoftwareBehavior, true);
+        emit CapabilityFoundByUser(msg.sender, _softwareBehavior);
+        foundCapabilities[_softwareBehavior] = true;
+        if (!allowedCapabilities[_softwareBehavior]) {
+            emit CapabilityViolated(msg.sender, _softwareBehavior);
+            violatedCapabilitiesCount++;
+        }
     }
 
     // function to verify the signature
     function verifySignature(bytes32 _hash, bytes memory _signature) public pure returns (address) {
-        bytes32 messageHash = prefixed(_hash);
-        address signer = recoverSigner(messageHash, _signature);
+        address signer = recoverSigner(_hash, _signature);
         return signer;
     }
 
     // function to add prefix to the message
-    function prefixed(bytes32 _hash) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
+    function prefixed(bytes32 _hash) internal pure returns (bytes32) {
+        return keccak256(abi.encode("\x19Ethereum Signed Message:\n32", _hash));
     }
 
     function recoverSigner(bytes32 _messageHash, bytes memory _signature) public pure returns (address) {

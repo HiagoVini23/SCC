@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Map {
+  id_software               Int          @id
+  contract                  String       @unique
+  last_block_pending_report Int?
+  last_block_report         Int
+  capabilities              Capability[]
+}
+
+model Capability {
+  id             Int    @id @default(autoincrement())
+  description    String
+  type           String//  SELF_FOUND  || EXTERNALLY_FOUND
+  Map            Map?   @relation(fields: [mapId_software], references: [id_software])
+  mapId_software Int?
+}

@@ -1,5 +1,5 @@
 import { prisma } from '../../prisma/client';
-import { TypeErrorsEnum } from 'enum/TypeErrorsEnum';
+import { TypeErrorsEnum } from 'enum/TypeEnum';
 import { Map } from '@prisma/client';
 
 export class MapService {

@@ -1,22 +1,19 @@
 import { prisma } from '../../prisma/client';
-import { TypeErrorsEnum } from 'enum/TypeErrorsEnum';
-import { Report } from '@prisma/client';
+import { TypeCapability, TypeErrorsEnum } from 'enum/TypeEnum';
+import { Capability } from '@prisma/client';
 
 export class ReportService {
    
-    async create(reportId: number, id_software: number, behaviors: string[]) {
+    async create(id_software: number, description: string, type: TypeCapability) {
         try {
-            const createdReport = await prisma.report.create({
+            const createdCapability = await prisma.capability.create({
                 data: {
-                  id: reportId,
-                  mapId: id_software,
-                  behaviors: {
-                    create: behaviors.map(description => ({
-                        description: description
-                    }))
-                }}
+                  mapId_software: id_software,
+                  type: type,
+                  description: description
+                }
               });
-            return { ok: true, message: "Created successfully!", data: createdReport };
+            return { ok: true, message: "Created successfully!", data: createdCapability };
         } catch (error: any) {
             console.log(error)
             return { ok: false, message: "Internal error!", data: TypeErrorsEnum.Internal };
@@ -25,9 +22,9 @@ export class ReportService {
 
     async findAll(id_software: number){
         try {
-            const reportsFromSoftware = await prisma.report.findMany({
+            const reportsFromSoftware = await prisma.capability.findMany({
                 where:{
-                    mapId: id_software                    
+                    mapId_software: id_software                    
                 }});
             return { ok: true, message: "Found successfully!", data: reportsFromSoftware };
         } catch (error: any) {
@@ -38,7 +35,7 @@ export class ReportService {
 
     async deleteMany(ids: number[]){
         try{
-            const reportsDeleted = await prisma.report.deleteMany({
+            const reportsDeleted = await prisma.capability.deleteMany({
                 where: {
                     id: {
                         in: ids
