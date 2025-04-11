@@ -3,11 +3,13 @@ import { MapService } from '../services/MapService';
 import { ContractService } from '../services/ContractService';
 import { getStatusResponseError } from '../utils/ErrorsHandling';
 import { TypeErrorsEnum } from 'enum/TypeEnum';
+import path from 'path';
 const mapService = new MapService();
 const contractService = new ContractService();
 
 interface MapData {
-    id_software: number;
+    id: number;
+    path: string
     contract: string;
     last_block_pending_report: number;
     last_block_report: number;
@@ -27,9 +29,9 @@ export class ContractController {
     }
 
     async getReportOverview(req: Request, res: Response) {
-        const id_software = Number(req.params.id)
-        const mapResponse = await mapService.findById(id_software);
-        let contractResponse;
+        const { path } = req.body
+        const mapResponse = await mapService.findByPath(path);
+        let contractResponse = {ok: false};
         if (mapResponse.ok) {
             //@ts-ignore
             contractResponse = await contractService.getReportOverview(mapResponse.data.contract);
@@ -41,10 +43,9 @@ export class ContractController {
     }
 
     async reportSoftwareBehavior(req: Request, res: Response) {
-        const id_software = Number(req.params.id)
-        const { behavior } = req.body
-        const mapResponse = await mapService.findById(id_software);
-        let contractResponse;
+        const { behavior, path } = req.body
+        const mapResponse = await mapService.findByPath(path);
+        let contractResponse = {ok: false};
         if (mapResponse.ok) {
             //@ts-ignore
             contractResponse = await contractService.reportSoftwareBehavior(mapResponse.data.contract, behavior);
@@ -57,22 +58,20 @@ export class ContractController {
 
     // listen todos, não precisa ser id, passa path e 
     // rodar ao iniciar
-    async startAllEventListeningForSoftware(req: Request, res: Response) {
-        const id_software = Number(req.params.id)
-        const map = await mapService.findById(id_software)
+    async startAllEventListeningForSoftware() {
+        const map = await mapService.findAll()
         if (map.ok) {
-            const data = map.data as MapData;
-            await contractService.fetchCapabilities(data.contract, data.last_block_report)
-            contractService.listenForCapabilityViolated(data.contract);
-            return res.status(200).send(map)
+            const data = map.data as MapData[];
+            for (const d of data) {
+                await contractService.fetchCapabilities(d.contract, d.last_block_report);
+                contractService.listenForCapabilityViolated(d.contract);
+            }
         }
-        const status = getStatusResponseError(map);
-        return res.status(status).send(map);
     }
 
     async stopAllEventListeningForSoftware(req: Request, res: Response) {
-        const id_software = Number(req.params.id)
-        const map = await mapService.findById(id_software)
+        const {path} = req.body
+        const map = await mapService.findByPath(path)
         if (map.ok) {
             const data = map.data as MapData;
             contractService.stopListeningForCapabilityViolated(data.contract);
@@ -83,15 +82,19 @@ export class ContractController {
     }
 
     async installation(req: Request, res: Response) {
-        const id_software = Number(req.params.id)
-        const { key, contractAddress } = req.body
+        const { key, contractAddress, path } = req.body
         const contractResponse = await contractService.authorizeUser(key, contractAddress);
+        const existing_map = await mapService.findByPath(path)
+        //@ts-ignore
+        const last_block = existing_map.ok ? existing_map.data.last_block_report : 0
         if (contractResponse.ok) {
-            if (!(await mapService.findById(id_software)).ok) {
-                const mapResponse = await mapService.create(id_software, contractAddress);
-                if (mapResponse.ok)
-                    return res.status(200).send(contractResponse)
+            if (!existing_map.ok) {
+                const mapResponse = await mapService.create(path, contractAddress);
+                if (!mapResponse.ok)
+                    return res.status(500).send({ok: false})
             }
+            await contractService.fetchCapabilities(contractAddress, last_block);
+            contractService.listenForCapabilityViolated(contractAddress);
             return res.status(200).send(contractResponse)
         }
         const status = getStatusResponseError(contractResponse);
@@ -99,14 +102,14 @@ export class ContractController {
     }
 
     async uninstallation(req: Request, res: Response) {
-        const id_software = Number(req.params.id)
-        const mapResponse = await mapService.findById(id_software);
-        let contractResponse;
+        const { path } = req.body
+        const mapResponse = await mapService.findByPath(path);
+        let contractResponse = { ok: false};
         if (mapResponse.ok) {
             //@ts-ignore
             contractResponse = await contractService.revokeUser(mapResponse.data.contract);
             if (contractResponse.ok) {
-                await mapService.delete(id_software)
+                await mapService.delete(path)
                 return res.status(200).send(contractResponse)
             }
         }

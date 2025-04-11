@@ -1,9 +1,13 @@
-require("dotenv").config();
+import { loadEnv } from './utils/env'; // ⬅️ Primeiro isso
+const envFlag = process.env.NODE_ENV || '';
+loadEnv(envFlag); // ⬅️ Já carrega logo
 import express from 'express';
 import ContractRoutes from './routes/ContractRoutes';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { ContractService } from './services/ContractService';
+import { ContractController } from 'controllers/ContractController';
+const cc = new ContractController();
 
 const corsOptions = {
     origin: "*",
@@ -20,4 +24,7 @@ app.use(bodyParser.json());
 
 app.use('/contracts', ContractRoutes);
 
-app.listen(PORT as number, () => console.log(`Listening on all interfaces: ${PORT}`));
+app.listen(PORT as number, async () => {
+    console.log(`Listening on all interfaces: ${PORT}`)
+    await cc.startAllEventListeningForSoftware();
+});

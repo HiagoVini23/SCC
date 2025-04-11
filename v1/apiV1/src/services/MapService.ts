@@ -4,9 +4,9 @@ import { Map } from '@prisma/client';
 
 export class MapService {
    
-    async create(id: number, contractAdress: string) {
+    async create(path: string, contractAdress: string) {
         try {
-            const createdMap = await prisma.map.create({ data: {id_software: id, contract: contractAdress, last_block_report: 0} })
+            const createdMap = await prisma.map.create({ data: {path: path, contract: contractAdress, last_block_report: 0} })
             return { ok: true, message: "Created successfully!", data: createdMap };
         } catch (error: any) {
             console.log(error)
@@ -29,11 +29,11 @@ export class MapService {
         }
     }
 
-    async findById(id: number) {
+    async findByPath(path: string) {
         try {
             const contractAdress = await prisma.map.findUnique({
                 where: {
-                    id_software: id
+                    path: path
                 },
             })
             if(contractAdress)
@@ -41,6 +41,17 @@ export class MapService {
             return { ok: false, message: "Found Failed!", data: TypeErrorsEnum.NotFound};          
         } catch (error) {
             console.log(error);
+            return { ok: false, message: "Internal error!", data: TypeErrorsEnum.Internal };
+        }
+    }
+
+    
+    async findAll(){
+        try {
+            const maps = await prisma.map.findMany();
+            return { ok: true, message: "Found successfully!", data: maps };
+        } catch (error: any) {
+            console.log(error)
             return { ok: false, message: "Internal error!", data: TypeErrorsEnum.Internal };
         }
     }
@@ -61,11 +72,11 @@ export class MapService {
         }
     }
 
-    async delete(id: number){
+    async delete(path: string){
         try{
             const deleted = await prisma.map.delete({
                 where:{
-                   id_software: id
+                   path: path
                 }
             })
             return { ok: true, message: "Map deleted successfully!", data: deleted };

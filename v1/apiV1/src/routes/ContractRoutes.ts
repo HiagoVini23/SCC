@@ -4,12 +4,10 @@ const router = express.Router();
 const contractController = new ContractController()
 
 router.post('/registerkey', contractController.registerKey);
-router.post('/installation/:id', contractController.installation);
+router.post('/installation', contractController.installation);
 router.post('/uninstallation/:id', contractController.uninstallation);
-router.get('/reportoverview/:id', contractController.getReportOverview);
-router.post('/generatereport/:id', contractController.reportSoftwareBehavior);
-router.post('/startevents/:id', contractController.startAllEventListeningForSoftware);
-router.post('/stopevents/:id', contractController.stopAllEventListeningForSoftware);
+router.get('/reportoverview', contractController.getReportOverview);
+router.post('/generatereport', contractController.reportSoftwareBehavior);
 
 module.exports = router;
 export default router;

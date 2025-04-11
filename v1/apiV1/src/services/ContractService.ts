@@ -2,7 +2,7 @@ import { prisma } from '../../prisma/client';
 import { TypeCapability, TypeErrorsEnum } from 'enum/TypeEnum';
 import { ethers } from 'ethers';
 import { MapService } from './MapService';
-import { ReportService } from './ReportService';
+import { ReportService } from './CapabilityService';
 const provider = new ethers.providers.JsonRpcProvider(process.env.BLOCKCHAIN_URL);
 const providerSocket = new ethers.providers.WebSocketProvider(process.env.BLOCKCHAIN_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY_WALLET, provider);

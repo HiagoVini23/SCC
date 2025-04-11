@@ -4,11 +4,11 @@ import { Capability } from '@prisma/client';
 
 export class ReportService {
    
-    async create(id_software: number, description: string, type: TypeCapability) {
+    async create(path: string, description: string, type: TypeCapability) {
         try {
             const createdCapability = await prisma.capability.create({
                 data: {
-                  mapId_software: id_software,
+                  mapPath: path,
                   type: type,
                   description: description
                 }
@@ -20,13 +20,13 @@ export class ReportService {
         }
     }
 
-    async findAll(id_software: number){
+    async findAllByPath(path: string){
         try {
-            const reportsFromSoftware = await prisma.capability.findMany({
+            const capabilities = await prisma.capability.findMany({
                 where:{
-                    mapId_software: id_software                    
+                    mapPath: path                    
                 }});
-            return { ok: true, message: "Found successfully!", data: reportsFromSoftware };
+            return { ok: true, message: "Found successfully!", data: capabilities };
         } catch (error: any) {
             console.log(error)
             return { ok: false, message: "Internal error!", data: TypeErrorsEnum.Internal };
