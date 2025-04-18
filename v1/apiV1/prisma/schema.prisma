@@ -16,6 +16,8 @@ model Map {
   capabilities              Capability[]
 }
 
+///time and date
+//mapPath não está puxando o path
 model Capability {
   id             Int    @id @default(autoincrement())
   description    String

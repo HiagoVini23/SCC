@@ -44,6 +44,7 @@ export class ContractController {
 
     async reportSoftwareBehavior(req: Request, res: Response) {
         const { behavior, path } = req.body
+        console.log(path)
         const mapResponse = await mapService.findByPath(path);
         let contractResponse = {ok: false};
         if (mapResponse.ok) {

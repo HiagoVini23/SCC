@@ -1,3 +1,4 @@
 /node_modules
-.env
+.env*
 /prisma/migrations
+/dbs
